@@ -5,7 +5,7 @@ USE Database_Design;
 -- 1. 账号密码表 account
 CREATE TABLE account(
     person_id VARCHAR(20) PRIMARY KEY COMMENT '对应用户',
-    password VARCHAR(20) NOT NULL COMMENT '密码',
+    password VARCHAR(20) NOT NULL COMMENT '密码'
 )COMMENT '账号密码';
 
 
