@@ -1,3 +1,4 @@
+DROP DATABASE IF EXISTS Database_Design;
 CREATE DATABASE IF NOT EXISTS Database_Design DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE Database_Design;
 
@@ -134,7 +135,7 @@ CREATE TABLE exam (
 ) COMMENT '考试信息表';
 
 
--- 10. 考试成绩表 exam_score (存储原始分+赋分,关联市排名)
+-- 10. 考试成绩表 exam_score (存储原始分+赋分)
 CREATE TABLE exam_score (
     id INT NOT NULL AUTO_INCREMENT COMMENT '成绩记录ID',
     exam_id VARCHAR(20) NOT NULL COMMENT '考试编号',
