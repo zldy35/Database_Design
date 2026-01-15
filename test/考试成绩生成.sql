@@ -71,29 +71,29 @@ BEGIN
         WHERE student_id = v_student_id;
         
         -- 为语数英三门必考科目生成成绩
-        CALL InsertExamScore(v_exam_id, v_student_id, 'C001', ROUND(60 + RAND() * 40, 2)); -- 语文
-        CALL InsertExamScore(v_exam_id, v_student_id, 'C002', ROUND(60 + RAND() * 40, 2)); -- 数学
-        CALL InsertExamScore(v_exam_id, v_student_id, 'C003', ROUND(60 + RAND() * 40, 2)); -- 英语
+        CALL InsertExamScore(v_exam_id, v_student_id, 'C001', ROUND(60 + RAND() * 40, 0)); -- 语文
+        CALL InsertExamScore(v_exam_id, v_student_id, 'C002', ROUND(60 + RAND() * 40, 0)); -- 数学
+        CALL InsertExamScore(v_exam_id, v_student_id, 'C003', ROUND(60 + RAND() * 40, 0)); -- 英语
         
         -- 根据two_choose_one生成对应选考科目成绩
         IF v_two_choose_one = '物理' THEN
-            CALL InsertExamScore(v_exam_id, v_student_id, 'C004', ROUND(60 + RAND() * 40, 2)); -- 物理
+            CALL InsertExamScore(v_exam_id, v_student_id, 'C004', ROUND(60 + RAND() * 40, 0)); -- 物理
         ELSEIF v_two_choose_one = '历史' THEN
-            CALL InsertExamScore(v_exam_id, v_student_id, 'C005', ROUND(60 + RAND() * 40, 2)); -- 历史
+            CALL InsertExamScore(v_exam_id, v_student_id, 'C005', ROUND(60 + RAND() * 40, 0)); -- 历史
         END IF;
         
         -- 根据four_choose_two生成对应选考科目成绩
         IF v_four_choose_two LIKE '%政治%' THEN
-            CALL InsertExamScore(v_exam_id, v_student_id, 'C006', ROUND(60 + RAND() * 40, 2)); -- 政治
+            CALL InsertExamScore(v_exam_id, v_student_id, 'C006', ROUND(60 + RAND() * 40, 0)); -- 政治
         END IF;
         IF v_four_choose_two LIKE '%地理%' THEN
-            CALL InsertExamScore(v_exam_id, v_student_id, 'C007', ROUND(60 + RAND() * 40, 2)); -- 地理
+            CALL InsertExamScore(v_exam_id, v_student_id, 'C007', ROUND(60 + RAND() * 40, 0)); -- 地理
         END IF;
         IF v_four_choose_two LIKE '%生物%' THEN
-            CALL InsertExamScore(v_exam_id, v_student_id, 'C008', ROUND(60 + RAND() * 40, 2)); -- 生物
+            CALL InsertExamScore(v_exam_id, v_student_id, 'C008', ROUND(60 + RAND() * 40, 0)); -- 生物
         END IF;
         IF v_four_choose_two LIKE '%化学%' THEN
-            CALL InsertExamScore(v_exam_id, v_student_id, 'C009', ROUND(60 + RAND() * 40, 2)); -- 化学
+            CALL InsertExamScore(v_exam_id, v_student_id, 'C009', ROUND(60 + RAND() * 40, 0)); -- 化学
         END IF;
         
         SET v_counter = v_counter + 1;
