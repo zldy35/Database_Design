@@ -1,3 +1,5 @@
+USE Database_Design;
+
 DELIMITER //
 
 -- 统计各选科组合人数
@@ -327,7 +329,8 @@ BEGIN
         scc.choose_status
     FROM student s
     JOIN student_course_choose scc ON s.student_id = scc.student_id
-    WHERE scc.choose_status = '需调整';
+    WHERE scc.choose_status = '需调整'
+    ORDER BY scc.two_choose_one, scc.four_choose_two;
 END //
 
 DELIMITER ;

@@ -1,10 +1,12 @@
+USE Database_Design;
+
 DELIMITER //
 
--- 更新所有考试课目的排名
+-- 更新指定考试课目的排名
 DROP PROCEDURE IF EXISTS UpdateExamRank //
 CREATE PROCEDURE UpdateExamRank(
-    IN i_exam_id VARCHAR(20),
-    IN i_course_id VARCHAR(20)
+    IN i_exam_id VARCHAR(20),       -- '%' 可以全部考试排序
+    IN i_course_id VARCHAR(20)      -- '%' 可以全部科目排序
 )
 BEGIN
     UPDATE exam_score es
@@ -17,8 +19,8 @@ BEGIN
             ) as calculated_rank
         FROM exam_score
         WHERE original_score IS NOT NULL
-        AND exam_id = i_exam_id
-        AND course_id = i_course_id
+        AND exam_id LIKE i_exam_id
+        AND course_id LIKE i_course_id
     ) ranked ON es.id = ranked.id
     SET es.course_rank = ranked.calculated_rank;
 END //
@@ -87,6 +89,7 @@ DELIMITER ;
 
 -- 示例
 -- CALL UpdateExamRank('E2026011517423001', 'C008');
+-- CALL UpdateExamRank('E2026011517423001', '%');
 -- CALL CalculateConvertScore('E2026011517423001', 'C008');
 -- 查看效果
 -- select *

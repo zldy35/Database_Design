@@ -20,6 +20,7 @@ BEGIN
     DECLARE v_counter INT DEFAULT 0;
     DECLARE v_total_students INT DEFAULT 0;
     DECLARE v_done INT DEFAULT FALSE;
+    DECLARE v_records INT DEFAULT 0;
     
     -- 定义课程ID映射变量
     DECLARE v_course_count INT DEFAULT 0;
@@ -106,8 +107,11 @@ BEGIN
     UPDATE exam
     SET valid_exam_num = v_total_students
     WHERE exam_id = v_exam_id;
+
+    SELECT count(*) INTO v_records
+    FROM exam_score;
     
-    SELECT CONCAT('考试生成完成: ', p_exam_name, ', 共为 ', v_total_students, ' 名高二学生生成了成绩，共 ', v_counter*9, ' 条成绩记录') AS Result;
+    SELECT CONCAT('考试生成完成: ', p_exam_name, ', 共为 ', v_total_students, ' 名高二学生生成了成绩，共 ', v_records, ' 条成绩记录') AS Result;
     
 END //
 
