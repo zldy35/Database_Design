@@ -55,6 +55,7 @@ CREATE TABLE staff (
     staff_name VARCHAR(50) NOT NULL COMMENT '教职工姓名',
     gender ENUM('男', '女') NOT NULL COMMENT '性别',
     position VARCHAR(50) NOT NULL COMMENT '职称',
+    course VARCHAR(100) COMMENT '所授课程',
     is_leave ENUM('是', '否') NOT NULL DEFAULT '否' COMMENT '是否离职',
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '录入时间',
     PRIMARY KEY (staff_id),
