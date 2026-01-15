@@ -5,7 +5,7 @@ DB_CONFIG = {
     "host": "localhost",
     "port": 3306,
     "user": "root",
-    "password": "808040597",
+    "password": "root",
     "database": "database_design",
     "charset": "utf8mb4",
     "cursorclass": pymysql.cursors.DictCursor  # 返回字典格式，直观取值
@@ -15,6 +15,58 @@ def get_db_conn():
     """获取数据库连接"""
     conn = pymysql.connect(**DB_CONFIG)
     return conn
+
+def create_exam_score_log_table():
+    """
+    创建exam_score_log表（如果不存在）
+    用于记录成绩修改日志
+    """
+    conn = get_db_conn()
+    cursor = conn.cursor()
+    
+    try:
+        # 检查表是否已存在
+        check_table_sql = """
+        SELECT COUNT(*) AS table_exists
+        FROM information_schema.tables 
+        WHERE table_schema = %s AND table_name = 'exam_score_log';
+        """
+        cursor.execute(check_table_sql, (DB_CONFIG["database"],))
+        result = cursor.fetchone()
+        
+        if result['table_exists']:
+            print("exam_score_log表已存在，无需创建")
+            return {"code": 200, "msg": "exam_score_log表已存在"}
+        
+        # 创建exam_score_log表的SQL语句
+        create_table_sql = """
+        CREATE TABLE exam_score_log (
+            log_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '日志ID，主键',
+            score_id INT NOT NULL COMMENT '成绩表ID，关联exam_score表的id字段',
+            exam_id VARCHAR(20) NOT NULL COMMENT '考试ID，关联exam表',
+            student_id VARCHAR(20) NOT NULL COMMENT '学生ID，关联student表',
+            course_id VARCHAR(20) NOT NULL COMMENT '课程ID，关联course表',
+            old_original_score DECIMAL(5,2) COMMENT '修改前的原始分数',
+            new_original_score DECIMAL(5,2) COMMENT '修改后的原始分数',
+            operate_account VARCHAR(20) NOT NULL COMMENT '操作人账号（工号/学号）',
+            operate_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间，默认为当前时间',
+            INDEX idx_student_course (student_id, course_id),
+            INDEX idx_operate_account (operate_account),
+            INDEX idx_operate_time (operate_time)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='考试成绩修改日志表';
+        """
+        cursor.execute(create_table_sql)
+        conn.commit()
+        print("exam_score_log表创建成功！")
+        return {"code": 200, "msg": "exam_score_log表创建成功"}
+    
+    except Exception as e:
+        conn.rollback()
+        print(f"创建exam_score_log表失败：{str(e)}")
+        return {"code": 500, "msg": f"创建exam_score_log表失败：{str(e)}"}
+    finally:
+        cursor.close()
+        conn.close()
 
 # ========== 获取用户角色+权限关联信息 ==========
 def get_user_role_and_info(operate_account: str) -> dict:
@@ -194,7 +246,7 @@ def update_score(operate_account: str, score_id: int, new_original_score: float)
                 VALUES ({old_score_data['id']}, '{old_score_data['exam_id']}', '{old_score_data['student_id']}', 
                 '{old_score_data['course_id']}', {old_score}, {new_original_score}, '{operate_account}');
             """
-        cursor.execute(sql_insert_log)
+            cursor.execute(sql_insert_log)
 
         conn.commit()
         return {"code": 200, "msg": f"修改成功：成绩ID[{score_id}]分数从{old_score}修改为{new_original_score}", "data": None}
@@ -255,21 +307,68 @@ def update_staff_info_api(operate_account: str, staff_id: str, **kwargs) -> dict
     finally:
         cursor.close()
         conn.close()
+
+
+# ========== 更新教师课程函数 ==========
+def update_teacher_course(staff_id: str, course_name: str) -> dict:
+    """
+    更新指定教师的授课课程
+    :param staff_id: 教师工号
+    :param course_name: 课程名称
+    :return: 统一返回格式
+    """
+    conn = get_db_conn()
+    cursor = conn.cursor()
+    try:
+        # 查询教师是否存在
+        sql_check = f"SELECT staff_id, staff_name FROM staff WHERE staff_id = '{staff_id}';"
+        cursor.execute(sql_check)
+        staff_data = cursor.fetchone()
+        if not staff_data:
+            return {"code": 400, "msg": f"教职工工号[{staff_id}]不存在！", "data": None}
+
+        # 更新教师课程
+        sql_update = f"UPDATE staff SET course = '{course_name}' WHERE staff_id = '{staff_id}';"
+        cursor.execute(sql_update)
+
+        # 查询更新后的信息
+        sql_select = f"SELECT staff_id, staff_name, course FROM staff WHERE staff_id = '{staff_id}';"
+        cursor.execute(sql_select)
+        updated_data = cursor.fetchone()
+        conn.commit()
+        return {"code": 200, "msg": f"教师[{staff_id}]课程更新成功！", "data": updated_data}
+
+    except Exception as e:
+        conn.rollback()
+        return {"code": 500, "msg": f"更新失败：{str(e)}", "data": None}
+    finally:
+        cursor.close()
+        conn.close()
   
 
 # ========== 直观测试调用示例 ==========
 if __name__ == "__main__":
-    # 测试1：学生查自己的成绩 有权限
-    # print("===== 学生S0000001查自己的语文(C001)成绩 =====")
-    # print(query_score("S000001", "S000001", "C001"))
+    
+    # 首先创建exam_score_log表
+    print("===== 创建exam_score_log表 =====")
+    create_exam_score_log_table()
+    
+    # 更新T000004老师的课程为语文
+    print("===== 更新T000004老师的课程为语文 =====")
+    print(update_teacher_course("T000004", "语文"))
+    
+    
+    #测试1：学生查自己的成绩 有权限
+    print("===== 学生S0000001查自己的语文(C001)成绩 =====")
+    print(query_score("S000001", "S000001", "C001"))
 
-    # # 测试2：学生查别人的成绩 无权限
-    # print("===== 学生S000001查S000002的数学(C002)成绩 =====")
-    # print(query_score("S000001", "S000002", "C002"))
+    # 测试2：学生查别人的成绩 无权限
+    print("===== 学生S000001查S000002的数学(C002)成绩 =====")
+    print(query_score("S000001", "S000002", "C002"))
 
     # 测试3：科任老师修改自己授课课程的成绩 有权限
     print("===== 科任老师T000004修改成绩ID=1(语文) =====")
-    print(update_score("T000004", 1, 98.5))
+    print(update_score("T000004", 1, 96.5))
 
     # 测试4：校长尝试修改成绩 无权限
     print("===== 校长T000001修改成绩ID=1 =====")
@@ -281,4 +380,4 @@ if __name__ == "__main__":
     
     # 测试6：其他人修改职工信息 无权限
     print("===== 教师T000002修改职工信息 =====")
-    print(update_staff_info_api("T000002", "T000002", is_leave="是"))  
+    print(update_staff_info_api("T000002", "T000002", is_leave="是"))

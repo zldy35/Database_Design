@@ -79,19 +79,26 @@ BEGIN
         -- 创建视图SQL
         SET @create_sql = CONCAT(
             'CREATE VIEW ', @view_name, ' AS ',
-            'SELECT ROW_NUMBER() OVER(ORDER BY total_score DESC, yw_score DESC, sx_score DESC, yy_score DESC, zk_sum DESC) AS rank_id,',
-            'student_id, total_score ',
+            'SELECT ROW_NUMBER() OVER(ORDER BY total_score DESC, yw_score DESC, sx_score DESC, yy_score DESC) AS rank_id,',
+            'student_id, yw_score as `语文`, sx_score as `数学`, yy_score as `英语`, wl_score as `物理`, ls_score as `历史`, zz_score as `政治`, dl_score as `地理`, sw_score as `生物`, hx_score as `化学`, total_score as `赋分总分` ',
             'FROM (',
-                'SELECT student_id,',
-                'SUM(IF(convert_score IS NOT NULL, convert_score, original_score)) AS total_score,',
-                'MAX(IF(course_id="C001", original_score, 0)) AS yw_score,',
-                'MAX(IF(course_id="C002", original_score, 0)) AS sx_score,',
-                'MAX(IF(course_id="C003", original_score, 0)) AS yy_score,',
-                'SUM(IF(course_id NOT IN("C001","C002","C003"),IF(convert_score IS NOT NULL, convert_score, original_score),0)) AS zk_sum ',
-                'FROM exam_score WHERE exam_id = ''', v_exam_id, ''' ',
-                'GROUP BY student_id',
+                'SELECT s.student_id,',
+                'MAX(IF(c.course_id="C001", IF(es.convert_score IS NOT NULL, es.convert_score, es.original_score), NULL)) AS yw_score,',
+                'MAX(IF(c.course_id="C002", IF(es.convert_score IS NOT NULL, es.convert_score, es.original_score), NULL)) AS sx_score,',
+                'MAX(IF(c.course_id="C003", IF(es.convert_score IS NOT NULL, es.convert_score, es.original_score), NULL)) AS yy_score,',
+                'MAX(IF(c.course_id="C004", IF(es.convert_score IS NOT NULL, es.convert_score, es.original_score), NULL)) AS wl_score,',
+                'MAX(IF(c.course_id="C005", IF(es.convert_score IS NOT NULL, es.convert_score, es.original_score), NULL)) AS ls_score,',
+                'MAX(IF(c.course_id="C006", IF(es.convert_score IS NOT NULL, es.convert_score, es.original_score), NULL)) AS zz_score,',
+                'MAX(IF(c.course_id="C007", IF(es.convert_score IS NOT NULL, es.convert_score, es.original_score), NULL)) AS dl_score,',
+                'MAX(IF(c.course_id="C008", IF(es.convert_score IS NOT NULL, es.convert_score, es.original_score), NULL)) AS sw_score,',
+                'MAX(IF(c.course_id="C009", IF(es.convert_score IS NOT NULL, es.convert_score, es.original_score), NULL)) AS hx_score,',
+                'SUM(IF(es.convert_score IS NOT NULL, es.convert_score, es.original_score)) AS total_score ',
+                'FROM student s ',
+                'LEFT JOIN exam_score es ON s.student_id = es.student_id AND es.exam_id = ''', v_exam_id, ''' ',
+                'LEFT JOIN course c ON es.course_id = c.course_id ',
+                'GROUP BY s.student_id',
             ') AS total ',
-            'ORDER BY total_score DESC, yw_score DESC, sx_score DESC, yy_score DESC, zk_sum DESC;'
+            'ORDER BY total_score DESC, yw_score DESC, sx_score DESC, yy_score DESC;'
         );
         
         
