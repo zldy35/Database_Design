@@ -1,14 +1,16 @@
-DELIMITER //
-
 -- 统计各选科组合人数
 SELECT 
     CONCAT(two_choose_one, '-', four_choose_two) AS combination_name,
-    COUNT(*) AS student_count
-FROM student_course_choose 
-WHERE choose_status = '已确认'
+    SUM(CASE WHEN choose_status = '已确认' THEN 1 ELSE 0 END) AS '已确认人数',
+    SUM(CASE WHEN choose_status = '待确认' THEN 1 ELSE 0 END) AS '待确认人数',
+    SUM(CASE WHEN choose_status = '需调整' THEN 1 ELSE 0 END) AS '需调整人数',
+    COUNT(*) AS '总人数'
+FROM student_course_choose
 GROUP BY two_choose_one, four_choose_two
-ORDER BY student_count DESC;
+ORDER BY '已确认人数' DESC;
 
+
+DELIMITER //
 
 -- 为达到开班阈值的班级分班
 CREATE PROCEDURE CheckSubjectCombinationThreshold()
@@ -147,6 +149,7 @@ END //
 
 
 -- 学生选课调整
+DROP PROCEDURE IF EXISTS AdjustStudentCourseSelection //
 CREATE PROCEDURE AdjustStudentCourseSelection(
     IN p_student_id VARCHAR(20),
     IN p_two_choose_one ENUM('物理', '历史'),
@@ -180,6 +183,7 @@ END //
 
 
 -- 处理人数不足的选科组合，提醒学生重新选择
+DROP PROCEDURE IF EXISTS HandleInsufficientCombination //
 CREATE PROCEDURE HandleInsufficientCombination()
 BEGIN
     -- 将人数不足的选科组合状态设置为"需调整"，要求学生重新选课
@@ -193,7 +197,8 @@ BEGIN
         GROUP BY two_choose_one, four_choose_two
         HAVING COUNT(*) < 40  -- 低于开班阈值40人
     ) insufficient ON CONCAT(scc.two_choose_one, '-', scc.four_choose_two) = insufficient.combination_name
-    SET scc.choose_status = '需调整';
+    SET scc.choose_status = '需调整'
+    WHERE scc.choose_status = '已确认';
     
     -- 返回需要调整选课的学生信息
     SELECT 
@@ -208,3 +213,7 @@ BEGIN
 END //
 
 DELIMITER ;
+
+
+call HandleInsufficientCombination(); -- 选出"需调整"的学生标注
+call AdjustStudentCourseSelection('S000001', '历史', '政治,生物') -- 手动调整学生选课并确认

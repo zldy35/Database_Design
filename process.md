@@ -32,7 +32,7 @@ Database_Design/  # 仓库根目录
 │   ├── dcl/                   # DCL（数据控制语言）：权限分配
 │   │   └── 01_grant_permissions.sql    # 给不同数据库用户分配权限（对应业务角色）
 │   ├── procedures/            # 存储过程/函数：业务逻辑封装
-│   │   ├── 01_score_convert_func.sql   # 政史地生赋分计算函数
+│   │   ├── 01_score_convert_func.sql   # 政地生化赋分计算函数
 │   │   ├── 02_check_class_num_proc.sql # 选科班人数阈值校验存储过程
 │   │   └── 03_stat_course_choose_proc.sql # 选课人数统计存储过程
 │   └── scripts/               # 辅助脚本：批量操作、定时任务等
@@ -98,7 +98,7 @@ WHERE is_city_rank = '是';  -- MySQL 8.0+ 支持函数索引，否则建普通�
 #### 3. 考试与成绩管理模块
 说明: 成绩赋分, 成绩更改日志
 
-广州高考实行等级赋分制度，主要针对思想政治、地理、化学和生物四门科目，旨在平衡不同科目的难度差异。
+广州高考实行等级赋分制度，主要针对思想政治、地理、生物和化学四门科目，旨在平衡不同科目的难度差异。
 **赋分制度概述**
 1. 等级赋分：广州高考的赋分制度将考生的选考科目成绩按从高到低排序，根据考生人数比例划分为五个等级：A、B、C、D、E，各等级人数所占比例分别为15%、35%、35%、13%和2%。 
 2. 赋分区间：每个等级对应的分数区间如下：
@@ -129,3 +129,75 @@ WHERE is_city_rank = '是';  -- MySQL 8.0+ 支持函数索引，否则建普通�
 
 
 ### 数据库测试
+
+#### 选课数据插入
+
+成功完成了为高一学生插入选课表数据的任务。具体实现如下：
+1. 创建了'test/选课数据插入_最终版.sql'文件，包含完整的存储过程
+2. 成功为1000名高一学生插入选课数据
+3. 满足了所有要求：
+   - 物理/历史二选一比例为6:4（实际为600:400）
+   - 政史地生四选二按照要求的顺序排列（政治<地理<生物<化学）
+   - "物理"+"政治,地理"组合限制在15人（< 30人）
+   - "历史"+"生物,化学"组合限制在15人（< 30人）
+4. 所有数据均已正确插入到student_course_choose表中
+5. 解决了**存储过程中变量赋值的问题**，使用**用户变量(@variable)**作为中间步骤确保了数据正确获取(使用**本地变量**会出错)
+
+```powershell
+PS E:\Columns\courses\database_数据库原理\final_assignment\Database_Design> Get-Content -Encoding UTF8 "test/选课数据插入_最终版.sql" | & "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" --defaults-file="C:\ProgramData\MySQL\MySQL Server 8.0\my.ini" -uroot -proot --default-character-set=utf8mb4 --init-command="SET NAMES utf8mb4;"          
+mysql: [Warning] Using a password on the command line interface can be insecure.
+info
+总共需要处理 1000 名高一学生
+progress
+已处理 100 名学生，当前学生ID: S000100
+progress
+已处理 200 名学生，当前学生ID: S000200
+progress
+已处理 300 名学生，当前学生ID: S000300
+progress
+已处理 400 名学生，当前学生ID: S000400
+progress
+已处理 500 名学生，当前学生ID: S000500
+progress
+已处理 600 名学生，当前学生ID: S000600
+progress
+已处理 700 名学生，当前学生ID: S000700
+progress
+已处理 800 名学生，当前学生ID: S000800
+progress
+已处理 900 名学生，当前学生ID: S000900
+progress
+已处理 1000 名学生，当前学生ID: S001000
+summary
+数据插入完成，物理:历史 = 600:400，总计 1000 名学生
+two_choose_one  four_choose_two student_count
+物理    化学,生物       51
+物理    地理,化学       96
+物理    地理,生物       101
+物理    政治,化学       87
+物理    政治,地理       15
+物理    政治,生物       104
+物理    生物,化学       146
+历史    地理,化学       65
+历史    地理,生物       58
+历史    政治,化学       68
+历史    政治,地理       120
+历史    政治,生物       74
+历史    生物,化学       15
+PS E:\Columns\courses\database_数据库原理\final_assignment\Database_Design> echo "USE Database_Design; SELECT two_choose_one, four_choose_two, COUNT(*) as student_count FROM student_course_choose WHERE (two_choose_one = '物理' AND four_choose_two = '政治,地理') OR (two_choose_one = '历史' AND four_choose_two = '生物,化学') GROUP BY two_choose_one, four_choose_two;" | & "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" --defaults-file="C:\ProgramData\MySQL\MySQL Server 8.0\my.ini" -uroot -proot --default-character-set=utf8mb4 --init-command="SET NAMES utf8mb4;"
+mysql: [Warning] Using a password on the command line interface can be insecure.
+two_choose_one  four_choose_two student_count
+物理    政治,地理       15
+历史    生物,化学       15
+PS E:\Columns\courses\database_数据库原理\final_assignment\Database_Design> echo "USE Database_Design; SELECT DISTINCT four_choose_two FROM student_course_choose ORDER BY four_choose_two;" | & "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" --defaults-file="C:\ProgramData\MySQL\MySQL Server 8.0\my.ini" -uroot -proot --default-character-set=utf8mb4 --init-command="SET NAMES utf8mb4;"                                                                                                                                 
+mysql: [Warning] Using a password on the command line interface can be insecure.
+four_choose_two
+化学,生物
+地理,化学
+地理,生物
+政治,化学
+政治,地理
+政治,生物
+生物,化学
+```
+

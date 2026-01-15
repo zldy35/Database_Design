@@ -31,7 +31,7 @@ CREATE TABLE course (
     course_id VARCHAR(20) NOT NULL COMMENT '课程编号',
     course_name VARCHAR(50) NOT NULL COMMENT '课程名称',
     course_type ENUM('主科', '主选科', '副选科') NOT NULL COMMENT '课程类型',
-    is_score_convert ENUM('是', '否') NOT NULL COMMENT '是否参与赋分(仅政史地生为是)',
+    is_score_convert ENUM('是', '否') NOT NULL COMMENT '是否参与赋分(仅政地生化为是)',
     PRIMARY KEY (course_id)
 ) COMMENT '高中课程信息表';
 
@@ -41,11 +41,11 @@ INSERT INTO course VALUES
 ('C002', '数学', '主科', '否'),
 ('C003', '英语', '主科', '否'),
 ('C004', '物理', '主选科', '否'),
-('C005', '化学', '主选科', '否'),
-('C006', '生物', '副选科', '是'),
-('C007', '政治', '副选科', '是'),
-('C008', '历史', '副选科', '是'),
-('C009', '地理', '副选科', '是');
+('C005', '历史', '主选科', '否'),
+('C006', '政治', '副选科', '是'),
+('C007', '地理', '副选科', '是'),
+('C008', '生物', '副选科', '是'),
+('C009', '化学', '副选科', '是');
 
 
 -- 4. 教职工表 staff
@@ -112,9 +112,9 @@ CREATE TABLE student_course_choose (
     student_id VARCHAR(20) NOT NULL COMMENT '学号',
     main_course VARCHAR(100) NOT NULL DEFAULT '语文,数学,英语' COMMENT '主科组合(固定)',
     two_choose_one ENUM('物理', '历史') NOT NULL COMMENT '物理/历史二选一',
-    four_choose_two VARCHAR(50) NOT NULL COMMENT '政史地生四选二(如政治,地理)',
+    four_choose_two VARCHAR(50) NOT NULL COMMENT '政地生化四选二(如政治,地理)',
     class_id VARCHAR(20) COMMENT '分配的选科班编号',
-    choose_status ENUM('待确认', '已确认', '需调整') NOT NULL DEFAULT '待确认' COMMENT '选课状态',
+    choose_status ENUM('待确认', '已确认', '需调整', '处理中', '已分班') NOT NULL DEFAULT '待确认' COMMENT '选课状态',
     choose_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '选课时间',
     PRIMARY KEY (id),
     UNIQUE KEY uk_student_choose (student_id),
@@ -141,7 +141,7 @@ CREATE TABLE exam_score (
     student_id VARCHAR(20) NOT NULL COMMENT '学号',
     course_id VARCHAR(20) NOT NULL COMMENT '课程编号',
     original_score DECIMAL(5,2) NOT NULL COMMENT '原始分数',
-    convert_score DECIMAL(5,2) COMMENT '赋分分数(政史地生)',
+    convert_score DECIMAL(5,2) COMMENT '赋分分数(政地生化)',
     course_rank INT COMMENT '单科排名',
     PRIMARY KEY (id),
     UNIQUE KEY uk_exam_student_course (exam_id, student_id, course_id),
